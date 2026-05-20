@@ -31,6 +31,7 @@ def ping_device(ip):
 devices = {
     "Localhost": "127.0.0.1",
     "Google DNS": "8.8.8.8",
+    "Ubuntu VM": "192.168.30.3",
     "Test Offline Device": "10.255.255.1"
 }
 

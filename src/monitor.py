@@ -1,5 +1,6 @@
 import os
 import subprocess
+import paramiko
 import time
 from datetime import datetime
 
@@ -37,6 +38,29 @@ devices = {
 
 # Store previous statuses
 previous_status = {}
+
+def ssh_check():
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+            ssh.connect(
+                hostname="192.168.30.3",
+                username="ubuntu",
+                password="ubuntu"
+            )
+
+            stdin, stdout, stderr = ssh.exec_command("hostname")
+            output = stdout.read().decode().strip()
+
+            ssh.close()
+
+            return f"SSH Connected to: {output}"
+
+        except Exception as e:
+            return f"SSH Failed: {e}"
+
+print(ssh_check())
 
 while True:
     print("\n--- Network Monitoring ---\n")

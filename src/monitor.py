@@ -50,55 +50,72 @@ def ssh_check():
                 password="ubuntu"
             )
 
-            stdin, stdout, stderr = ssh.exec_command("hostname")
-            output = stdout.read().decode().strip()
+            stdin, stdout, stderr = ssh.exec_command("free -m | grep Mem:")
+            output = stdout.read().decode().strip().split()
 
-            ssh.close()
+            print(output)
 
-            return f"SSH Connected to: {output}"
+            total_memory = output[1]
+            used_memory = output[2]
+            free_memory = output[3]
+            
+            return {
+                "ssh_status": "CONNECTED",
+                "total_memory": total_memory,
+                "used_memory": used_memory,
+                "free_memory": free_memory
+            }
 
         except Exception as e:
-            return f"SSH Failed: {e}"
+            return {
+                "ssh_status": "FAILED",
+                "memory_data": str(e)
+            }
 
-print(ssh_check())
+ssh_result = ssh_check()
 
-while True:
-    print("\n--- Network Monitoring ---\n")
+print(ssh_result["ssh_status"])
+print("Used:", ssh_result["used_memory"])
+print("Free:", ssh_result["free_memory"])
 
-    for device_name, ip in devices.items():
+if __name__ == "__main__":
+    while True:
+        print("\n--- Network Monitoring ---\n")
 
-        current_status = ping_device(ip)
+        for device_name, ip in devices.items():
 
-        print(
-            f"{device_name} is "
-            f"{current_status['status']} "
-            f"({current_status['response_time']} ms)"
-        )
+            current_status = ping_device(ip)
 
-        # Check if status changed
-        if device_name in previous_status:
+            print(
+                f"{device_name} is "
+                f"{current_status['status']} "
+                f"({current_status['response_time']} ms)"
+            )
 
-            if previous_status[device_name]['status'] != current_status['status']:
+            # Check if status changed
+            if device_name in previous_status:
 
-                print(
-                    f"ALERT: {device_name} changed from "
-                    f"{previous_status[device_name]['status']} "
-                    f"to {current_status['status']}"
-                )
+                if previous_status[device_name]['status'] != current_status['status']:
 
-                # Save alert to log file
-                with open("src/network_logs.txt", "a") as log_file:
-
-                    log_file.write(
-                        f"{datetime.now()} - "
-                        f"{device_name} changed from "
-                        f"{previous_status[device_name]['status']} to "
-                        f"{current_status['status']}\n"
+                    print(
+                        f"ALERT: {device_name} changed from "
+                        f"{previous_status[device_name]['status']} "
+                        f"to {current_status['status']}"
                     )
 
-        # Update status
-        previous_status[device_name] = current_status
+                    # Save alert to log file
+                    with open("src/network_logs.txt", "a") as log_file:
 
-    print("\nChecking again in 5 seconds...\n")
+                        log_file.write(
+                            f"{datetime.now()} - "
+                            f"{device_name} changed from "
+                            f"{previous_status[device_name]['status']} to "
+                            f"{current_status['status']}\n"
+                        )
 
-    time.sleep(5)
+            # Update status
+            previous_status[device_name] = current_status
+
+        print("\nChecking again in 5 seconds...\n")
+
+        time.sleep(5)

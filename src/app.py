@@ -1,3 +1,4 @@
+from monitor import devices, ping_device, ssh_check
 from flask import Flask, render_template_string
 import subprocess
 from datetime import datetime
@@ -10,38 +11,6 @@ previous_device_status = {}
 # Store alert message
 alert_message = ""
 
-# Devices to monitor
-devices = {
-    "Localhost": "127.0.0.1",
-    "Google DNS": "8.8.8.8",
-    "Ubuntu VM": "192.168.30.3",
-    "Test Offline Device": "10.255.255.1"
-}
-
-
-# Ping function
-def ping_device(ip):
-    try:
-        result = subprocess.check_output(
-            ["ping", "-c", "1", ip],
-            universal_newlines=True
-        )
-
-        if "time=" in result:
-            response_time = result.split("time=")[1].split(" ")[0]
-        else:
-            response_time = "N/A"
-
-        return {
-            "status": "ONLINE",
-            "response_time": response_time
-        }
-
-    except:
-        return {
-            "status": "OFFLINE",
-            "response_time": "N/A"
-        }
 
 
 @app.route("/")
@@ -102,7 +71,11 @@ def dashboard():
                 font-family: Arial, sans-serif;
                 background-color: #0f172a;
                 color: white;
-                padding: 30px;
+                padding: 15px;
+            }
+            
+            canvas {
+                max-width: 100%;
             }
 
             h1 {
@@ -121,9 +94,10 @@ def dashboard():
 
             .summary-container {
                 display: flex;
-                gap: 20px;
                 justify-content: center;
-                margin-bottom: 35px;
+                gap: 20px;
+                flex-wrap: wrap;
+                margin-bottom: 30px auto;
             }
 
             .card {
@@ -133,6 +107,13 @@ def dashboard():
                 width: 180px;
                 text-align: center;
                 box-shadow: 0 0 15px rgba(0,0,0,0.4);
+            }
+
+            .card pre {
+                font-size: 11px;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                overflow-x: auto;
             }
 
             .card h2 {
@@ -148,23 +129,24 @@ def dashboard():
             }
 
             table {
-                width: 100%;
+                width: 95%;
+                margin: auto;
                 border-collapse: collapse;
-                background: rgba(255,255,255,0.08);
+                background: rgba(255,255,255,0.05);
                 border-radius: 15px;
                 overflow: hidden;
             }
 
             th {
-                padding: 18px;
+                padding: 12px;
                 background: rgba(255,255,255,0.15);
-                font-size: 20px;
+                font-size: 16px;
             }
 
             td {
-                padding: 18px;
+                padding: 10px;
                 text-align: center;
-                font-size: 18px;
+                font-size: 15px;
                 border-bottom: 1px solid rgba(255,255,255,0.1);
             }
 
@@ -217,13 +199,38 @@ def dashboard():
             }
 
             .chart-container {
-                width: 40%;
-                max-width: 500px;
-                height: 220px;
-                margin: 40px auto;
-                background: rgba(255,255,255,0.08);
-                padding: 20px;
+                width: 90%;
+                max-width: 850px;
+                height: 250px;
+                margin: 20px auto;
+                background: #1e293b;
+                padding: 15px;
                 border-radius: 20px;
+            }
+
+            .top-container {
+                display: flex;
+                justify-content: center;
+                gap: 12px;
+                margin-bottom: 15px;
+                flex-wrap: wrap;
+            }
+
+            .ssh-card {
+                width: 180px;
+                min-height: 70px;
+                padding: 8px;
+            }
+
+            .ssh-card p {
+                font-size: 14px;
+                margin: 3px 0;
+            }
+
+            .ssh-card pre {
+                font-size: 9px;
+                white-space: pre-wrap;
+                overflow-x: auto;
             }
 
         </style>
@@ -239,6 +246,28 @@ def dashboard():
         {% endif %}
 
         <h1>Network Monitoring Dashboard</h1>
+
+        <div class="top-container">
+            
+            <div class="card ssh-card">
+                <h2>SSH Status</h2>
+                <p>{{ ssh_result['ssh_status'] }}</p>
+            </div>
+
+            <div class="card ssh-card">
+                <h2>Ubuntu Memory</h2>
+                
+                <p style="color:#ef4444;">
+                    Used: {{ ssh_result["used_memory"] }} MB
+                </p>
+
+                <p style="color:#22c55e;">
+                    Free: {{ ssh_result["free_memory"] }} MB
+                </p>
+            </div>
+
+        </div>
+            
 
         {% if alert_message %}
         <div class="alert-box">
@@ -343,7 +372,7 @@ def dashboard():
 
         <div class="chart-container">
 
-            <div style="height: 200px;">
+            <div style="height: 300px;">
                 <canvas id="responseChart"></canvas>
             </div>
         </div>
@@ -385,9 +414,10 @@ def dashboard():
                         ],
 
                         backgroundColor: [
-                            '#00ffcc',
-                            '#00ffcc',
-                            '#ff4c4c'
+                            '#38bdf8',
+                            '#22c55e',
+                            '#f59e0b',
+                            '#ef4444'
                         ],
 
                         borderWidth: 1
@@ -448,11 +478,14 @@ def dashboard():
     </html>
     """
 
+    ssh_result = ssh_check()
+
     return render_template_string(
         html,
         device_status=device_status,
         last_updated=last_updated,
-        alert_message=alert_message
+        alert_message=alert_message,
+        ssh_result=ssh_result
     )
 
 

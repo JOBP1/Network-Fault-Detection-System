@@ -14,3 +14,12 @@ This project is designed to monitor network devices in a virtual environment, de
 - Python
 - Virtual Machines (VirtualBox / VMware)
 - Flask (for dashboard)
+
+## Features
+- Real-time network device monitoring
+- SSH connectivity monitoring
+- Ubuntu memeory monitoring
+- Response time visualization using charts
+- Online/offline device detection
+- Automatic dashboard refresh
+- VirtualBox-based monitoring environment

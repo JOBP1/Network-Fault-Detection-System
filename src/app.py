@@ -1,7 +1,84 @@
+import smtplib
+from email.mime.text import MIMEText
 from monitor import devices, ping_device, ssh_check
 from flask import Flask, render_template_string
 import subprocess
 from datetime import datetime
+
+
+def send_email_alert(device_name, ip):
+
+    sender_email = "jobp1618@gmail.com"
+    sender_password = "ndno tnpn tszx nfkg"
+
+    receiver_email = "jobp1618@gmail.com"
+
+    subject = "Network Fault Alert"
+
+    body = f"""
+ALERT!
+
+Device: {device_name}
+IP Address: {ip}
+
+Status: OFFLINE
+
+Please investigate immediately.
+"""
+    
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+
+        print("Email alert sent!")
+
+    except Exception as e:
+        print("Email error:", e)
+
+def send_recovery_email(device_name, ip):
+    
+    sender_email = "jobp1618@gmail.com"
+    sender_password = "ndno tnpn tszx nfkg"
+
+    receiver_email = "jobp1618@gmail.com"
+
+    subject = "Network Recovery Alert"
+
+    body = f"""
+RECOVERY NOTICE!
+
+Device: {device_name}
+IP Address: {ip}
+
+Status: ONLINE
+
+Device has recovered successfully
+"""
+    
+    msg =MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+
+        print("Recovery email sent!")
+
+    except Exception as e:
+        print("Recovery email error:", e)
 
 app = Flask(__name__)
 
@@ -10,8 +87,6 @@ previous_device_status = {}
 
 # Store alert message
 alert_message = ""
-
-
 
 @app.route("/")
 def dashboard():
@@ -47,9 +122,11 @@ def dashboard():
 
                 if new_status == "OFFLINE":
                     alert_message = f"🚨 ALERT: {device_name} went OFFLINE"
+                    send_email_alert(device_name, ip)
 
                 else:
                     alert_message = f"✅ ALERT: {device_name} is back ONLINE"
+                    send_recovery_email(device_name, ip)
 
         # Save current status
         previous_device_status[device_name] = result["status"]
@@ -86,10 +163,14 @@ def dashboard():
             }
 
             .last-updated {
+                display: block;
                 text-align: center;
-                color: #d1d1d1;
+                width: 100%;
+                margin-top: 15px;
+                margin-bottom: 15px;
                 font-size: 18px;
-                margin-bottom: 30px;
+                font-weight: bold;
+                color: white;
             }
 
             .summary-container {
@@ -256,7 +337,6 @@ def dashboard():
 
             <div class="card ssh-card">
                 <h2>Ubuntu Memory</h2>
-                
                 <p style="color:#ef4444;">
                     Used: {{ ssh_result["used_memory"] }} MB
                 </p>
@@ -265,7 +345,10 @@ def dashboard():
                     Free: {{ ssh_result["free_memory"] }} MB
                 </p>
             </div>
-
+        
+        <div class="card ssh-card">
+            <h2>CPU Usage</h2>
+            <p>{{ ssh_result["cpu_usage"] }}%</p>
         </div>
             
 

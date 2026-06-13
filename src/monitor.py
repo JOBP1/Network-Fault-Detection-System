@@ -51,7 +51,13 @@ def ssh_check():
             )
 
             stdin, stdout, stderr = ssh.exec_command("free -m | grep Mem:")
+            cpu_stdin, cpu_stdnout, cpu_stderr = ssh.exec_command("top -bn1 | grep '%Cpu'")
+            cpu_output = cpu_stdnout.read().decode().strip()
+            print("CPU OUTPUT:", cpu_output)
             output = stdout.read().decode().strip().split()
+            cpu_parts =cpu_output.split(",")
+            cpu_idle = cpu_parts[3].strip().split(" ")[0]
+            cpu_usage = round(100 - float(cpu_idle), 1)
 
             print(output)
 
@@ -63,10 +69,13 @@ def ssh_check():
                 "ssh_status": "CONNECTED",
                 "total_memory": total_memory,
                 "used_memory": used_memory,
-                "free_memory": free_memory
+                "free_memory": free_memory,
+                "cpu_usage": cpu_usage
             }
 
         except Exception as e:
+            print("SSH ERROR:", e)
+
             return {
                 "ssh_status": "FAILED",
                 "memory_data": str(e)

@@ -19,7 +19,10 @@ This project is designed to monitor network devices in a virtual environment, de
 - Real-time network device monitoring
 - SSH connectivity monitoring
 - Ubuntu memeory monitoring
+- Ubuntu CPU monitoring
 - Response time visualization using charts
 - Online/offline device detection
 - Automatic dashboard refresh
+- Dashboard alerts
 - VirtualBox-based monitoring environment
+- Email recovery notifications
